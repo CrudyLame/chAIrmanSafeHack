@@ -1,3 +1,8 @@
+## Demo
+
+https://github.com/CrudyLame/chAIrmanSafeHack/tree/main/media/demo.gif
+
+
 # chAIrman Services Setup Guide
 
 This repository contains three microservices that work together:
@@ -5,9 +10,6 @@ This repository contains three microservices that work together:
 - **SafeCowService**: Web interface service
 - **TgNotifyService**: Telegram notification service
 
-## Demo
-
-https://github.com/CrudyLame/chAIrmanSafeHack/tree/main/media/demo.mp4
 
 ## Prerequisites
 
