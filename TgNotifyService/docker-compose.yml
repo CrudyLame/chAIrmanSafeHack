@@ -20,6 +20,8 @@ services:
     command: ./scripts/start-dev.sh
     depends_on:
       - app_redis
+    networks:
+      - cow-service-network
 
   app_redis:
     image: redis:6.2-alpine
@@ -30,12 +32,14 @@ services:
       - '--requirepass myStrongPassword'
     ports:
       - 36379:6379
+    networks:
+      - cow-service-network
 
 volumes:
   poetry_cache:
     driver: "local"
 
 networks:
-  default:
-    external: true
+  cow-service-network:
+    driver: bridge
     name: cow-service-network

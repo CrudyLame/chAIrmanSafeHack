@@ -60,12 +60,6 @@ class ZerePyAgent:
     def _setup_langchain_agent(self):
         tools = [
             Tool(
-                name="Get_Insight",
-                func=self._get_insight,
-                description="Get insight for CIP with 63",
-                return_direct=False,
-            ),
-            Tool(
                 name="Safe_Check_Status",
                 func=lambda x: self.connection_manager.perform_action(
                     "safe", "check-status", [x]
@@ -104,7 +98,7 @@ class ZerePyAgent:
             Tool(
                 name="Wait_Confirmation",
                 func=lambda x: self._request_confirmation(x),
-                description='Request human confirmation for signing a transaction. Input: {"safeTxHash": "string"} containing transaction details to be signed',
+                description='Request human confirmation for signing a transaction. Input: {"safeTxHash": "string"} containing transaction details to be signed.',
                 return_direct=False,
             ),
             Tool(
@@ -191,15 +185,6 @@ Thought:{agent_scratchpad}"""
         )
         logger.info("✅ LangChain agent setup complete")
 
-    def _get_insight(self, *args) -> str:
-        try:
-            from src.prompts import CIP_INSIGHT_PROMPT
-
-            return CIP_INSIGHT_PROMPT
-        except Exception as e:
-            logger.error(f"Error getting CIP insight: {str(e)}")
-            return "Error retrieving insight for CIP-63"
-
     def _request_confirmation(self, request_data: str) -> str:
         """
         Send confirmation request to the confirmation service
@@ -216,13 +201,18 @@ Thought:{agent_scratchpad}"""
                 if isinstance(request_data, str)
                 else request_data.get("safeTxHash")
             )
+            callback_message = (
+                json.loads(request_data)["callback_message"]
+                if isinstance(request_data, str)
+                else request_data.get("callback_message")
+            )
 
             if not tx_hash:
                 raise ValueError("No transaction hash provided")
 
             url = "http://localhost:16000/confirm-tx"
             headers = {"Content-Type": "application/json"}
-            payload = {"tx_hash": tx_hash}
+            payload = {"tx_hash": tx_hash, "callback_message": callback_message}
 
             logger.info(f"Requesting confirmation for transaction: {tx_hash}")
             with httpx.Client() as client:

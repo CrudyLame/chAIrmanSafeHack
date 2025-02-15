@@ -14,6 +14,7 @@ aiogram = "^3.13.1"
 aioredis = "^2.0.1"
 redis = "^5.2.1"
 pydantic = "^2.9.2"
+requests = "^2.32.3"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -95,8 +95,8 @@ class ZerePyAgent:
                 ),
                 Tool(
                     name="Get_Insight",
-                    func=self._get_insight,
-                    description="Get insight for CIP with 63",
+                    func=lambda x: self._get_insight(x),
+                    description='Get insights about CIP-38 and CoW Swap. Input should be one of:\n1. "tell me about CIP-38" - returns CIP-38 detailed explanation\n2. "what did the community think about this proposal?" - returns community feedback\n3. "what do solvers do on CoWSwap?" - returns solver role explanation',
                     return_direct=False,
                 ),
             ]
@@ -194,6 +194,7 @@ You are chAIrman 🪑, the CoW Protocol community bot.
 - Use emojis for engagement (🐮 for CoW, 📊 for trading)
 - Sign messages with "- chAIrman 🪑"
 - IGNORE STUPID MESSAGES
+- WHEN USE GET_INSIGHT, SEND THE ANSWER TO DISCORD_SEND (WITHOUT PROCESSING IT, ADD ONLY `\n FOR NEW LINES)
 
 Analyze messages and reponse to LAST IMPORTANT MESSAGE.
 IF THERE IS NO IMPORTANT MESSAGE, IGNORE THE MESSAGES.
@@ -471,7 +472,7 @@ Priority Level: [High/Medium/Low]"""
             while True:
                 try:
                     current_time = time.time()
-                    if current_time - self.state["last_check"] >= 20:
+                    if current_time - self.state["last_check"] >= 15:
                         self.state["last_check"] = current_time
                         self._update_messages()
                         self._update_proposals("cow.eth")
@@ -482,14 +483,28 @@ Priority Level: [High/Medium/Low]"""
         except KeyboardInterrupt:
             logger.info("\n👋 Agent stopped")
 
-    def _get_insight(self, *args) -> str:
+    def _get_insight(self, query: str) -> str:
         try:
-            from src.prompts import CIP_INSIGHT_PROMPT
+            from src.prompts import (
+                CIP_38_COMMUNITY_PROMPT,
+                CIP_38_INSIGHT_PROMPT,
+                COW_SWAP_SOLVER_PROMPT,
+            )
 
-            return CIP_INSIGHT_PROMPT
+            query = query.lower()
+
+            if "community" in query or "think" in query:
+                return CIP_38_COMMUNITY_PROMPT
+            elif "cip-38" in query or "cip 38" in query:
+                return CIP_38_INSIGHT_PROMPT
+            elif "solver" in query or "cowswap" in query:
+                return COW_SWAP_SOLVER_PROMPT
+            else:
+                return CIP_38_INSIGHT_PROMPT
+
         except Exception as e:
-            logger.error(f"Error getting CIP insight: {str(e)}")
-            return f"Error retrieving insight for CIP-63"
+            logger.error(f"Error getting insight: {str(e)}")
+            return "Error retrieving insight"
 
     def _get_analysis(self, cip_number: str) -> str:
         try:

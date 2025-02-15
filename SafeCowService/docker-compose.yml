@@ -2,6 +2,8 @@ version: '3.8'
 
 services:
   cow-service:
+    hostname: cow-service
+    container_name: cow-service
     build: 
       context: .
       dockerfile: Dockerfile
@@ -19,11 +21,14 @@ services:
       - .env
     command: pnpm dev
     networks:
-      - cow-service-network
+      cow-service-network:
+        aliases:
+          - cow-service.local
 
 networks:
   cow-service-network:
     driver: bridge
+    name: cow-service-network
 
 volumes:
   pnpm-store:

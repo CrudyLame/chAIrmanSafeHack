@@ -16,10 +16,5 @@ b:
 ps:
   docker compose ps
 
-lc:
-  poetry run ruff check
-
-lf:
-  poetry run ruff format
 
 # examples:

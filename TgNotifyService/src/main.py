@@ -5,12 +5,14 @@ from typing import Dict
 from pydantic import BaseModel
 from src.bot import dp, bot, send_tx_confirmation
 from src.config import get_settings
+from src.utils.commands import set_bot_commands
 
 bot_task = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global bot_task
+    await set_bot_commands(bot)
     bot_task = asyncio.create_task(dp.start_polling(bot))
     yield
     if bot_task:

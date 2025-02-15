@@ -1,11 +1,14 @@
 import os
 import logging
+import asyncio
 from typing import Dict, Any
 from dotenv import set_key, load_dotenv
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
 from src.helpers import print_h_bar
 import requests
 import json
+import discord
+from discord.ext import commands
 
 logger = logging.getLogger("connections.discord_connection")
 
@@ -33,6 +36,23 @@ class DiscordConnection(BaseConnection):
         super().__init__(config)
         self.base_url = "https://discord.com/api/v10"
         self.bot_username = None
+        self.token = config.get("DISCORD_TOKEN") or os.getenv("DISCORD_TOKEN")
+        if not self.token:
+            raise ValueError("Discord token is required")
+
+        # Initialize Discord client
+        intents = discord.Intents.default()
+        intents.message_content = True
+        self.client = discord.Client(intents=intents)
+
+        # Start bot in background
+        self.bg_task = None
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.bg_task = self.loop.create_task(self.client.start(self.token))
+
+        # Test the token
+        self._test_connection(self.token)
 
     @property
     def is_llm_provider(self) -> bool:
@@ -277,16 +297,36 @@ class DiscordConnection(BaseConnection):
         return mentioned_messages
 
     def post_message(self, channel_id: str, message: str, **kwargs) -> dict:
-        """Send a new message"""
-        logger.debug("Sending a new message")
+        """Send a new message using Discord client"""
 
-        request_path = f"/channels/{channel_id}/messages"
-        payload = json.dumps({"content": f"{message}"})
-        response = self._post_request(request_path, payload)
-        formatted_response = self._format_posted_message(response)
+        async def _send_message():
+            channel = await self.client.fetch_channel(int(channel_id))
+            sent_message = await channel.send(content=message)
+            return sent_message
 
-        logger.info("Message posted successfully")
-        return formatted_response
+        try:
+            # Run the async function in the event loop
+            sent_message = self.loop.run_until_complete(_send_message())
+
+            formatted_response = self._format_posted_message(
+                {
+                    "id": str(sent_message.id),
+                    "channel_id": str(sent_message.channel.id),
+                    "content": sent_message.content,
+                    "timestamp": str(sent_message.created_at),
+                    "mentions": [
+                        {"id": str(user.id), "username": user.name}
+                        for user in sent_message.mentions
+                    ],
+                }
+            )
+
+            logger.info("Message posted successfully")
+            return formatted_response
+
+        except Exception as e:
+            logger.error(f"Error posting message: {str(e)}")
+            raise
 
     def reply_to_message(
         self, channel_id: str, message_id: str, message: str, **kwargs
@@ -466,3 +506,12 @@ class DiscordConnection(BaseConnection):
                 if mention["username"] == self.bot_username:
                     filtered_data.append(item)
         return filtered_data
+
+    def stop(self):
+        """Stop the Discord client"""
+        if self.bg_task and not self.bg_task.cancelled():
+            self.bg_task.cancel()
+        if self.client:
+            self.loop.run_until_complete(self.client.close())
+        if self.loop:
+            self.loop.close()
