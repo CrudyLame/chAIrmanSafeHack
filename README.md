@@ -3,7 +3,9 @@
 https://github.com/CrudyLame/chAIrmanSafeHack/tree/main/media/demo.gif
 
 
-# chAIrman Services Setup Guide
+# chAIrman 
+
+## Services Setup Guide
 
 This repository contains three microservices that work together:
 - **AgentZerePy**: Main agent service
