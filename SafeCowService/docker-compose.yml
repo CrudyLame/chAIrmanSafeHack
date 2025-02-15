@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  cow-service:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+      - pnpm-store:/app/.pnpm-store
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+    env_file:
+      - .env
+    command: pnpm dev
+    networks:
+      - cow-service-network
+
+networks:
+  cow-service-network:
+    driver: bridge
+
+volumes:
+  pnpm-store:
